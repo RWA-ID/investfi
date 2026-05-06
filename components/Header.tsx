@@ -1,82 +1,56 @@
 "use client";
 import { useState } from "react";
 
-export default function Header() {
-  const [view, setView] = useState<"institutional" | "retail">("institutional");
+export type ViewMode = "institutional" | "retail";
 
+interface Props {
+  onViewChange?: (v: ViewMode) => void;
+  view?: ViewMode;
+}
+
+export default function Header({ onViewChange, view = "institutional" }: Props) {
   return (
-    <header className="border-b border-[#1E2A35] bg-[#0B0F14]/95 backdrop-blur sticky top-0 z-50">
-      <div className="max-w-[1600px] mx-auto px-4 h-14 flex items-center justify-between gap-4">
+    <header className="border-b border-[#1E2A35] bg-[#0B0F14]/98 backdrop-blur sticky top-0 z-50">
+      <div className="max-w-[1600px] mx-auto px-6 h-16 flex items-center justify-between gap-6">
+
         {/* Brand */}
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="w-7 h-7 rounded bg-gradient-to-br from-[#00D4FF] to-[#0099BB] flex items-center justify-center text-[10px] font-bold text-black">
+        <div className="flex items-center gap-4 shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00D4FF] to-[#0077AA] flex items-center justify-center text-[11px] font-bold text-black tracking-wide">
             FI
           </div>
-          <span className="text-sm font-semibold tracking-widest text-[#C8D8E8]">
-            INVESTFI<span className="text-[#3D5166]">.ETH</span>
-          </span>
-          <span className="hidden sm:block text-[10px] text-[#3D5166] border border-[#1E2A35] px-1.5 py-0.5 rounded">
-            TERMINAL v2.1
-          </span>
-        </div>
-
-        {/* Center stats */}
-        <div className="hidden lg:flex items-center gap-6 text-[11px]">
-          <Stat label="TRACKED PROTOCOLS" value="15" />
-          <Stat label="AVG APY" value="7.24%" up />
-          <Stat label="TOTAL TVL" value="$41.5B" />
-          <Stat label="LAST UPDATE" value="LIVE" pulse />
-        </div>
-
-        {/* Right controls */}
-        <div className="flex items-center gap-3 shrink-0">
-          {/* View toggle */}
-          <div className="hidden sm:flex items-center gap-1 border border-[#1E2A35] rounded p-0.5 text-[11px]">
-            <button
-              onClick={() => setView("institutional")}
-              className={`px-3 py-1 rounded transition-colors ${
-                view === "institutional"
-                  ? "bg-[#00D4FF]/10 text-[#00D4FF] border border-[#00D4FF]/30"
-                  : "text-[#3D5166] hover:text-[#6B8499]"
-              }`}
-            >
-              INSTITUTIONAL
-            </button>
-            <button
-              onClick={() => setView("retail")}
-              className={`px-3 py-1 rounded transition-colors ${
-                view === "retail"
-                  ? "bg-[#00D4FF]/10 text-[#00D4FF] border border-[#00D4FF]/30"
-                  : "text-[#3D5166] hover:text-[#6B8499]"
-              }`}
-            >
-              RETAIL
-            </button>
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold tracking-widest text-[#C8D8E8] leading-none">
+              INVESTFI<span className="text-[#2D4A5E]">.ETH</span>
+            </span>
+            <span className="text-[9px] text-[#3D5166] tracking-widest mt-0.5">DeFi Intelligence Terminal</span>
           </div>
+        </div>
 
-          {/* Upgrade */}
-          <button className="hidden sm:block text-[11px] border border-[#FFD700]/30 text-[#FFD700] px-3 py-1.5 rounded hover:bg-[#FFD700]/10 transition-colors">
-            PRO ACCESS
-          </button>
+        {/* Center live indicator */}
+        <div className="hidden lg:flex items-center gap-1.5 text-[10px] text-[#3D5166]">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span>LIVE · DeFiLlama</span>
+          <span className="mx-3 text-[#1E2A35]">|</span>
+          <span>Revalidates every hour</span>
+        </div>
 
-          {/* Connect */}
-          <button className="text-[11px] bg-[#00D4FF]/10 border border-[#00D4FF]/40 text-[#00D4FF] px-3 py-1.5 rounded hover:bg-[#00D4FF]/20 transition-colors">
-            CONNECT
-          </button>
+        {/* View toggle */}
+        <div className="flex items-center gap-1 border border-[#1E2A35] rounded-lg p-1 text-[11px] bg-[#0D1318]">
+          {(["institutional", "retail"] as ViewMode[]).map((v) => (
+            <button
+              key={v}
+              onClick={() => onViewChange?.(v)}
+              className={`px-4 py-1.5 rounded-md transition-all font-medium tracking-wide ${
+                view === v
+                  ? "bg-[#00D4FF]/15 text-[#00D4FF] shadow-sm"
+                  : "text-[#3D5166] hover:text-[#6B8499]"
+              }`}
+            >
+              {v === "institutional" ? "INSTITUTIONAL" : "RETAIL"}
+            </button>
+          ))}
         </div>
       </div>
     </header>
-  );
-}
-
-function Stat({ label, value, up, pulse }: { label: string; value: string; up?: boolean; pulse?: boolean }) {
-  return (
-    <div className="flex flex-col items-center gap-0.5">
-      <span className="text-[#3D5166] text-[9px] tracking-widest">{label}</span>
-      <span className={`font-semibold text-[12px] flex items-center gap-1 ${up ? "text-emerald-400" : "text-[#C8D8E8]"}`}>
-        {pulse && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
-        {value}
-      </span>
-    </div>
   );
 }

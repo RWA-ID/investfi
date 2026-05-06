@@ -23,36 +23,40 @@ export default function FilterBar({ filters, onChange, count, total }: Props) {
   const set = (patch: Partial<Filters>) => onChange({ ...filters, ...patch });
 
   return (
-    <div className="border-b border-[#1E2A35] bg-[#0D1318]">
-      <div className="max-w-[1600px] mx-auto px-4 py-3 flex flex-wrap items-center gap-3">
-        {/* Search */}
-        <input
-          type="text"
-          placeholder="Search protocol..."
-          value={filters.search}
-          onChange={(e) => set({ search: e.target.value })}
-          className="bg-[#111820] border border-[#1E2A35] rounded px-3 py-1.5 text-xs text-[#C8D8E8] placeholder-[#3D5166] focus:outline-none focus:border-[#00D4FF]/40 w-44"
-        />
+    <div className="bg-[#0D1318]/80">
+      <div className="px-6 py-3 flex flex-wrap items-center gap-4">
 
-        {/* Chain filter */}
-        <Select
-          label="CHAIN"
+        {/* Search */}
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#3D5166] text-[11px]">⌕</span>
+          <input
+            type="text"
+            placeholder="Search protocol..."
+            value={filters.search}
+            onChange={(e) => set({ search: e.target.value })}
+            className="bg-[#111820] border border-[#1E2A35] rounded-lg pl-8 pr-3 py-2 text-[12px] text-[#C8D8E8] placeholder-[#3D5166] focus:outline-none focus:border-[#00D4FF]/40 w-48 transition-colors"
+          />
+        </div>
+
+        <div className="w-px h-5 bg-[#1E2A35]" />
+
+        <FilterSelect
+          label="Chain"
           value={filters.chain}
           options={CHAINS}
           onChange={(v) => set({ chain: v as Chain | "All" })}
         />
 
-        {/* Strategy filter */}
-        <Select
-          label="STRATEGY"
+        <FilterSelect
+          label="Strategy"
           value={filters.strategy}
           options={STRATEGIES}
           onChange={(v) => set({ strategy: v as StrategyType | "All" })}
         />
 
         {/* Risk ceiling */}
-        <div className="flex items-center gap-2 text-[11px]">
-          <span className="text-[#3D5166] tracking-widest">MAX RISK</span>
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] text-[#3D5166] tracking-widest whitespace-nowrap">MAX RISK</span>
           <input
             type="range"
             min={1}
@@ -60,30 +64,32 @@ export default function FilterBar({ filters, onChange, count, total }: Props) {
             step={0.5}
             value={filters.maxRisk}
             onChange={(e) => set({ maxRisk: parseFloat(e.target.value) })}
-            className="w-24 accent-sky-400"
+            className="w-28 accent-sky-400"
           />
-          <span className="text-sky-400 w-6 tabular-nums">{filters.maxRisk}</span>
+          <span className="text-sky-400 text-[13px] font-semibold w-6 tabular-nums">{filters.maxRisk}</span>
         </div>
 
-        {/* Sort */}
-        <Select
-          label="SORT"
+        <div className="w-px h-5 bg-[#1E2A35]" />
+
+        <FilterSelect
+          label="Sort by"
           value={filters.sort}
           options={["totalAPY", "riskAdjusted", "tvl", "riskScore"]}
           labels={["Total APY", "Risk-Adj Yield", "TVL", "Risk Score"]}
           onChange={(v) => set({ sort: v as Filters["sort"] })}
         />
 
-        {/* Result count */}
-        <span className="ml-auto text-[10px] text-[#3D5166]">
-          SHOWING <span className="text-[#C8D8E8]">{count}</span> / {total}
+        <div className="flex-1" />
+
+        <span className="text-[10px] text-[#3D5166] whitespace-nowrap">
+          <span className="text-[#C8D8E8] font-semibold">{count}</span> / {total} protocols
         </span>
       </div>
     </div>
   );
 }
 
-function Select({
+function FilterSelect({
   label, value, options, labels, onChange,
 }: {
   label: string;
@@ -93,12 +99,12 @@ function Select({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex items-center gap-1.5 text-[11px]">
-      <span className="text-[#3D5166] tracking-widest hidden sm:block">{label}</span>
+    <div className="flex items-center gap-2">
+      <span className="text-[10px] text-[#3D5166] tracking-widest hidden sm:block">{label.toUpperCase()}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="bg-[#111820] border border-[#1E2A35] rounded px-2 py-1.5 text-[#C8D8E8] text-[11px] focus:outline-none focus:border-[#00D4FF]/40 cursor-pointer"
+        className="bg-[#111820] border border-[#1E2A35] rounded-lg px-3 py-2 text-[12px] text-[#C8D8E8] focus:outline-none focus:border-[#00D4FF]/40 cursor-pointer transition-colors"
       >
         {options.map((o, i) => (
           <option key={o} value={o}>{labels ? labels[i] : o}</option>
