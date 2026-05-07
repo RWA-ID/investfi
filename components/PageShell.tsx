@@ -5,6 +5,8 @@ import MarketTicker from "./MarketTicker";
 import StatsBar from "./StatsBar";
 import OpportunityGrid from "./OpportunityGrid";
 import BackedBy from "./BackedBy";
+import ChainLeaderboard from "./ChainLeaderboard";
+import PortfolioSimulator from "./PortfolioSimulator";
 import type { Opportunity } from "@/lib/types";
 
 interface MarketPrices {
@@ -46,6 +48,8 @@ export default function PageShell({ opportunities, marketPrices, revenueData }: 
 
       <StatsBar opportunities={displayOpps} />
 
+      <ChainLeaderboard opportunities={displayOpps} />
+
       <div className="max-w-[1600px] mx-auto w-full px-6 flex-1 flex flex-col">
         {/* Page title */}
         <div className="flex items-start justify-between pt-6 pb-5 gap-4 flex-wrap">
@@ -79,6 +83,9 @@ export default function PageShell({ opportunities, marketPrices, revenueData }: 
 
         {/* Grid */}
         <OpportunityGrid opportunities={displayOpps} revenueData={revenueData} />
+
+        {/* Portfolio Simulator */}
+        <PortfolioSimulator opportunities={displayOpps} />
 
         {/* Backed by */}
         <BackedBy />

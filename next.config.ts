@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true, // required for static export
   },
+  turbopack: {
+    resolveAlias: {
+      accounts: "./lib/stub-accounts.js",
+    },
+  },
 };
 
 export default nextConfig;

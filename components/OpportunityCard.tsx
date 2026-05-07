@@ -1,10 +1,14 @@
+"use client";
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import type { Opportunity, StrategyType } from "@/lib/types";
 import { riskAdjustedYield } from "@/lib/risk";
 import { formatTVL, formatAPY } from "@/lib/format";
 import RiskBadge from "./RiskBadge";
 import ChainBadge from "./ChainBadge";
+import Sparkline from "./Sparkline";
+import AllocateModal from "./AllocateModal";
 
 // Map protocol id → public icon path. Drop SVGs in /public/icons/ and add a line here.
 const PROTOCOL_ICONS: Record<string, string> = {
@@ -45,8 +49,11 @@ export default function OpportunityCard({ opp, rank, isTop, revenueData }: Props
   const ra = riskAdjustedYield(opp.totalAPY, opp.riskScore);
   const isHighYield = opp.totalAPY > 10;
   const iconPath = PROTOCOL_ICONS[opp.id];
+  const [showModal, setShowModal] = useState(false);
 
   return (
+    <>
+    {showModal && <AllocateModal opp={opp} onClose={() => setShowModal(false)} />}
     <Link href={`/opportunity/${opp.id}`} className="block group">
       <div className="bg-[#111820] border border-[#1E2A35] rounded-xl hover:border-[#2D4A5E] hover:shadow-lg hover:shadow-black/30 transition-all duration-200 cursor-pointer h-full flex flex-col">
 
@@ -133,25 +140,41 @@ export default function OpportunityCard({ opp, rank, isTop, revenueData }: Props
 
         <div className="border-t border-[#1E2A35]/60" />
 
+        {/* Sparkline */}
+        <div className="px-4 py-2">
+          <Sparkline poolId={opp.poolId} currentAPY={opp.totalAPY} />
+        </div>
+
+        <div className="border-t border-[#1E2A35]/60" />
+
         {/* Yield source */}
         <div className="px-4 py-3 flex-1">
           <p className="text-[#6B8499] text-xs leading-relaxed line-clamp-2">{opp.yieldSource}</p>
         </div>
 
-        {/* Tags + CTA */}
-        <div className="border-t border-[#1E2A35]/60 px-4 py-3 flex items-center justify-between gap-2">
-          <div className="flex gap-1 flex-wrap min-w-0">
-            {opp.tags.slice(0, 2).map((t) => (
-              <span key={t} className="text-[8px] text-[#3D5166] border border-[#1E2A35] px-1.5 py-0.5 rounded-md truncate">
-                {t}
-              </span>
-            ))}
-          </div>
-          <span className="text-[10px] text-[#3D5166] group-hover:text-[#00D4FF] transition-colors shrink-0 font-medium tracking-wide">
+        {/* Tags */}
+        <div className="border-t border-[#1E2A35]/60 px-4 pt-3 flex gap-1 flex-wrap min-w-0">
+          {opp.tags.slice(0, 2).map((t) => (
+            <span key={t} className="text-[8px] text-[#3D5166] border border-[#1E2A35] px-1.5 py-0.5 rounded-md truncate">
+              {t}
+            </span>
+          ))}
+        </div>
+
+        {/* CTAs */}
+        <div className="px-4 pb-3 pt-2 flex items-center gap-2">
+          <button
+            onClick={(e) => { e.preventDefault(); setShowModal(true); }}
+            className="flex-1 text-[10px] bg-emerald-400/10 border border-emerald-400/30 text-emerald-400 py-2 rounded-lg hover:bg-emerald-400/20 transition-colors font-semibold tracking-wide text-center"
+          >
+            ALLOCATE →
+          </button>
+          <span className="text-[10px] text-[#3D5166] group-hover:text-[#00D4FF] transition-colors shrink-0 font-medium tracking-wide px-2">
             ANALYSIS →
           </span>
         </div>
       </div>
     </Link>
+    </>
   );
 }

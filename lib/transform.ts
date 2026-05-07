@@ -24,6 +24,7 @@ export function transformPool(live: LlamaPool, enrichment: PoolEnrichment): Oppo
 
   return {
     id: enrichment.id,
+    poolId: enrichment.poolId,
     protocol: enrichment.protocol,
     protocolLogo: enrichment.protocolLogo,
     chain: enrichment.chain,

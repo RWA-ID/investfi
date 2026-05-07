@@ -32,6 +32,7 @@ export interface HistoricalAPY {
 
 export interface Opportunity {
   id: string;
+  poolId: string; // DeFiLlama pool UUID (empty string for static/mock entries)
   protocol: string;
   protocolLogo: string;
   chain: Chain;

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import WalletButton from "./WalletButton";
 
 export type ViewMode = "institutional" | "retail";
 
@@ -34,7 +35,8 @@ export default function Header({ onViewChange, view = "institutional" }: Props) 
           <span>Revalidates every hour</span>
         </div>
 
-        {/* View toggle */}
+        {/* Right: view toggle + wallet */}
+        <div className="flex items-center gap-3 shrink-0">
         <div className="flex items-center gap-1 border border-[#1E2A35] rounded-lg p-1 text-[11px] bg-[#0D1318]">
           {(["institutional", "retail"] as ViewMode[]).map((v) => (
             <button
@@ -49,6 +51,8 @@ export default function Header({ onViewChange, view = "institutional" }: Props) 
               {v === "institutional" ? "INSTITUTIONAL" : "RETAIL"}
             </button>
           ))}
+        </div>
+        <WalletButton />
         </div>
       </div>
     </header>
