@@ -6,6 +6,7 @@ import { ENRICHMENT_BY_SLUG } from "@/lib/poolMap";
 import { formatTVL, formatAPY, formatPct } from "@/lib/format";
 import { riskAdjustedYield, riskColor, WEIGHTS_LABELS, WEIGHTS_PCT } from "@/lib/risk";
 import Header from "@/components/Header";
+import AllocateButton from "@/components/AllocateButton";
 import RiskBadge from "@/components/RiskBadge";
 import ChainBadge from "@/components/ChainBadge";
 import APYChart from "@/components/APYChart";
@@ -96,14 +97,17 @@ export default async function OpportunityPage({ params }: { params: Promise<{ id
                   </div>
                 </div>
               </div>
-              <a
-                href={opp.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[11px] border border-[#00D4FF]/30 text-[#00D4FF] px-4 py-2 rounded hover:bg-[#00D4FF]/10 transition-colors"
-              >
-                OPEN PROTOCOL →
-              </a>
+              <div className="flex items-center gap-2">
+                <AllocateButton opp={opp} />
+                <a
+                  href={opp.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] border border-[#1E2A35] text-[#6B8499] px-4 py-2 rounded hover:bg-[#1E2A35] transition-colors"
+                >
+                  OPEN PROTOCOL →
+                </a>
+              </div>
             </div>
 
             <p className="mt-5 text-[#6B8499] text-sm leading-relaxed border-l-2 border-[#1E2A35] pl-4">

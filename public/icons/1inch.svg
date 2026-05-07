@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D82122"/>
+      <stop offset="100%" stop-color="#E8821C"/>
+    </linearGradient>
+  </defs>
+  <!-- Horn -->
+  <polygon points="64,4 70,32 64,28 58,32" fill="url(#g1)"/>
+  <!-- Ears -->
+  <polygon points="38,38 30,20 46,30" fill="url(#g1)"/>
+  <polygon points="90,38 98,20 82,30" fill="url(#g1)"/>
+  <!-- Head -->
+  <ellipse cx="64" cy="62" rx="32" ry="28" fill="url(#g1)"/>
+  <!-- Mane -->
+  <path d="M32 48 Q18 62 20 80 Q22 90 30 96 L30 90 Q24 82 26 70 Q28 58 38 50Z" fill="url(#g1)"/>
+  <path d="M96 48 Q110 62 108 80 Q106 90 98 96 L98 90 Q104 82 102 70 Q100 58 90 50Z" fill="url(#g1)"/>
+  <!-- Body -->
+  <path d="M44 86 Q44 108 48 118 L52 118 L52 92Z" fill="url(#g1)"/>
+  <path d="M84 86 Q84 108 80 118 L76 118 L76 92Z" fill="url(#g1)"/>
+  <!-- Eyes -->
+  <circle cx="52" cy="57" r="5" fill="white"/>
+  <circle cx="76" cy="57" r="5" fill="white"/>
+  <circle cx="53" cy="57" r="2.5" fill="#111"/>
+  <circle cx="77" cy="57" r="2.5" fill="#111"/>
+  <!-- Nostrils -->
+  <ellipse cx="57" cy="72" rx="3" ry="2" fill="rgba(0,0,0,0.25)"/>
+  <ellipse cx="71" cy="72" rx="3" ry="2" fill="rgba(0,0,0,0.25)"/>
+</svg>
