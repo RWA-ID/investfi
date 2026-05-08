@@ -1,173 +1,189 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Opportunity } from "@/lib/types";
 import { riskAdjustedYield } from "@/lib/risk";
+import { Ticker, fmtUsdShort, ChainBadge, ProtoMark, GlassCard } from "./atoms";
 
-interface OutputStatProps {
-  label: string;
-  value: string;
-  accent?: "emerald" | "sky";
-  large?: boolean;
-}
+const CHAIN_COLOR_FOR_DONUT: Record<string, string> = {
+  Ethereum: "#627EEA",
+  Arbitrum: "#28A0F0",
+  Base: "#0052FF",
+  Optimism: "#FF0420",
+  Polygon: "#8247E5",
+  Avalanche: "#E84142",
+  Solana: "#14F195",
+};
 
-function OutputStat({ label, value, accent, large }: OutputStatProps) {
-  const color =
-    accent === "emerald" ? "text-emerald-400" :
-    accent === "sky" ? "text-sky-400" :
-    "text-[#C8D8E8]";
+function Donut({
+  weights,
+  colors,
+  size = 160,
+  thickness = 14,
+}: {
+  weights: number[];
+  colors: string[];
+  size?: number;
+  thickness?: number;
+}) {
+  const r = (size - thickness) / 2;
+  const c = 2 * Math.PI * r;
+  let acc = 0;
   return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-[9px] tracking-widest text-[#3D5166]">{label}</span>
-      <span className={`font-bold tabular-nums ${color} ${large ? "text-2xl" : "text-[15px]"}`}>{value}</span>
-    </div>
+    <svg width={size} height={size}>
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke="rgba(255,255,255,.05)"
+        strokeWidth={thickness}
+      />
+      {weights.map((w, i) => {
+        const len = (w / 100) * c;
+        const offset = -acc;
+        acc += len;
+        return (
+          <circle
+            key={i}
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke={colors[i]}
+            strokeWidth={thickness}
+            strokeDasharray={`${len} ${c - len}`}
+            strokeDashoffset={offset}
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+            strokeLinecap="butt"
+            style={{ transition: "stroke-dasharray .5s ease, stroke-dashoffset .5s ease" }}
+          />
+        );
+      })}
+    </svg>
   );
-}
-
-function initAllocations(ids: string[]): Record<string, number> {
-  const base = Math.floor(100 / ids.length);
-  const remainder = 100 - base * ids.length;
-  return Object.fromEntries(ids.map((id, i) => [id, base + (i === 0 ? remainder : 0)]));
 }
 
 export default function PortfolioSimulator({ opportunities }: { opportunities: Opportunity[] }) {
-  const top6 = useMemo(() => {
-    return [...opportunities]
-      .sort((a, b) => riskAdjustedYield(b.totalAPY, b.riskScore) - riskAdjustedYield(a.totalAPY, a.riskScore))
-      .slice(0, 6);
-  }, [opportunities]);
-
-  const [capital, setCapital] = useState(10_000);
-  const [allocations, setAllocations] = useState<Record<string, number>>(() =>
-    initAllocations(top6.map((o) => o.id))
+  const top = useMemo(
+    () =>
+      [...opportunities]
+        .sort(
+          (a, b) =>
+            riskAdjustedYield(b.totalAPY, b.riskScore) - riskAdjustedYield(a.totalAPY, a.riskScore)
+        )
+        .slice(0, 4),
+    [opportunities]
   );
 
-  // Re-init allocations when top6 changes (view switch)
-  const allocationIds = top6.map((o) => o.id).join(",");
-  const [lastIds, setLastIds] = useState(allocationIds);
-  if (allocationIds !== lastIds) {
-    setLastIds(allocationIds);
-    setAllocations(initAllocations(top6.map((o) => o.id)));
+  const [amount, setAmount] = useState(100000);
+  const [weights, setWeights] = useState<number[]>(() => top.map(() => 25));
+
+  const ids = top.map((o) => o.id).join(",");
+  const [lastIds, setLastIds] = useState(ids);
+  if (ids !== lastIds) {
+    setLastIds(ids);
+    setWeights(top.map(() => Math.floor(100 / Math.max(1, top.length))));
   }
 
-  function handleSlider(changedId: string, newValue: number) {
-    const others = top6.map((o) => o.id).filter((id) => id !== changedId);
-    const remaining = 100 - newValue;
-    const currentOtherTotal = others.reduce((s, id) => s + (allocations[id] ?? 0), 0);
+  const setWeight = (i: number, v: number) => {
+    const next = [...weights];
+    next[i] = v;
+    const sum = next.reduce((a, b) => a + b, 0) || 1;
+    setWeights(next.map((x) => Math.round((x / sum) * 100)));
+  };
 
-    let newAllocations: Record<string, number>;
-    if (currentOtherTotal === 0) {
-      const share = Math.floor(remaining / others.length);
-      const rem = remaining - share * others.length;
-      newAllocations = { ...allocations, [changedId]: newValue };
-      others.forEach((id, i) => { newAllocations[id] = share + (i === 0 ? rem : 0); });
-    } else {
-      const scale = remaining / currentOtherTotal;
-      newAllocations = { ...allocations, [changedId]: newValue };
-      let distributed = 0;
-      others.forEach((id, i) => {
-        const scaled = i < others.length - 1
-          ? Math.round((allocations[id] ?? 0) * scale)
-          : remaining - distributed;
-        newAllocations[id] = Math.max(0, scaled);
-        distributed += newAllocations[id];
-      });
-    }
-    setAllocations(newAllocations);
-  }
+  if (!top.length) return null;
 
-  const totalAlloc = top6.reduce((s, o) => s + (allocations[o.id] ?? 0), 0);
-  const blendedAPY = top6.reduce((s, o) => s + o.totalAPY * ((allocations[o.id] ?? 0) / 100), 0);
-  const blendedRisk = top6.reduce((s, o) => s + o.riskScore * ((allocations[o.id] ?? 0) / 100), 0);
-  const annualYield = capital * blendedAPY / 100;
-  const monthlyYield = annualYield / 12;
-  const dailyYield = annualYield / 365;
+  const blendedApy = top.reduce((a, o, i) => a + o.totalAPY * (weights[i] / 100), 0);
+  const blendedRisk = top.reduce((a, o, i) => a + o.riskScore * (weights[i] / 100), 0);
+  const yearly = amount * (blendedApy / 100);
+  const monthly = yearly / 12;
 
-  if (!top6.length) return null;
+  const colors = top.map((o) => CHAIN_COLOR_FOR_DONUT[o.chain] ?? "var(--accent)");
 
   return (
-    <section className="mt-8 mb-6">
-      <div className="bg-[#111820] border border-[#1E2A35] rounded-xl overflow-hidden">
-        {/* Header */}
-        <div className="border-b border-[#1E2A35] px-6 py-4 flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <p className="text-[9px] tracking-widest text-[#3D5166]">PORTFOLIO SIMULATOR</p>
-            <p className="text-[11px] text-[#6B8499] mt-0.5">Risk-adjusted allocation tool · no wallet required</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[#3D5166] text-[12px]">$</span>
-            <input
-              type="number"
-              value={capital}
-              min={0}
-              onChange={(e) => setCapital(Math.max(0, Number(e.target.value)))}
-              className="bg-[#0D1318] border border-[#1E2A35] rounded-lg px-3 py-1.5 text-[#C8D8E8] text-[13px] font-mono w-36 focus:outline-none focus:border-[#00D4FF]/40 tabular-nums"
-            />
-          </div>
+    <GlassCard className="simulator">
+      <div className="section-head">
+        <div>
+          <h3 className="section-head__title">Portfolio Simulator</h3>
+          <p className="section-head__sub">
+            Mix the top risk-adjusted yields and project your earnings
+          </p>
+        </div>
+        <div className="simulator__amount">
+          <span>$</span>
+          <input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(Math.max(0, +e.target.value || 0))}
+          />
+        </div>
+      </div>
+
+      <div className="simulator__body">
+        <div className="simulator__alloc">
+          {top.map((o, i) => (
+            <div key={o.id}>
+              <div className="simulator__head">
+                <ProtoMark logo={o.protocolLogo} id={o.id} size={28} alt={o.protocol} />
+                <div className="flex-1 min-w-0">
+                  <div className="simulator__name">{o.protocol}</div>
+                  <div className="simulator__meta">
+                    <ChainBadge chain={o.chain} compact />
+                    <span className="text-white/40 text-[11px]">
+                      {o.totalAPY.toFixed(2)}% APY · {o.strategyType}
+                    </span>
+                  </div>
+                </div>
+                <div className="simulator__pct">{weights[i]}%</div>
+              </div>
+              <div className="simulator__slider">
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={weights[i]}
+                  onChange={(e) => setWeight(i, +e.target.value)}
+                  style={{ ["--p" as string]: `${weights[i]}%` } as React.CSSProperties}
+                />
+              </div>
+            </div>
+          ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-[#1E2A35]">
-          {/* Sliders */}
-          <div className="lg:col-span-2 p-6 space-y-4">
-            {top6.map((opp) => {
-              const alloc = allocations[opp.id] ?? 0;
-              return (
-                <div key={opp.id} className="flex items-center gap-3 sm:gap-4">
-                  <div className="w-28 shrink-0">
-                    <p className="text-[11px] text-[#C8D8E8] truncate font-medium">{opp.protocol}</p>
-                    <p className="text-[9px] text-emerald-400">{opp.totalAPY.toFixed(2)}% APY</p>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    step={1}
-                    value={alloc}
-                    onChange={(e) => handleSlider(opp.id, Number(e.target.value))}
-                    className="flex-1 accent-sky-400 min-w-0"
-                  />
-                  <span className="text-sky-400 font-bold text-[13px] w-10 text-right tabular-nums shrink-0">
-                    {alloc.toFixed(0)}%
-                  </span>
-                  <span className="text-[#3D5166] text-[11px] w-20 text-right tabular-nums shrink-0 hidden sm:block">
-                    ${((capital * alloc) / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}
-                  </span>
-                </div>
-              );
-            })}
-            <div className="pt-2 border-t border-[#1E2A35] flex justify-between text-[10px]">
-              <span className="text-[#3D5166]">TOTAL ALLOCATED</span>
-              <span className={totalAlloc === 100 ? "text-emerald-400 font-semibold" : "text-amber-400 font-semibold"}>
-                {totalAlloc.toFixed(0)}%
-              </span>
+        <div className="simulator__results">
+          <div className="simulator__don">
+            <Donut weights={weights} colors={colors} />
+            <div className="simulator__don-center">
+              <div className="simulator__don-label">Blended APY</div>
+              <div className="simulator__don-val">
+                <Ticker value={blendedApy} decimals={2} suffix="%" />
+              </div>
             </div>
           </div>
-
-          {/* Output panel */}
-          <div className="p-6 bg-[#0D1318] flex flex-col gap-4">
-            <p className="text-[9px] tracking-widest text-[#3D5166]">PROJECTED RETURNS</p>
-            <OutputStat label="Blended APY" value={`${blendedAPY.toFixed(2)}%`} accent="emerald" large />
-            <OutputStat label="Blended Risk Score" value={blendedRisk.toFixed(1)} accent="sky" />
-            <div className="border-t border-[#1E2A35] pt-3 space-y-3">
-              <OutputStat
-                label="Annual Yield"
-                value={`$${annualYield.toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
-                accent="emerald"
-              />
-              <OutputStat
-                label="Monthly Yield"
-                value={`$${monthlyYield.toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
-              />
-              <OutputStat
-                label="Daily Yield"
-                value={`$${dailyYield.toLocaleString("en-US", { maximumFractionDigits: 2 })}`}
-              />
+          <div className="simulator__nums">
+            <div>
+              <div className="simulator__num-l">Per year</div>
+              <div className="simulator__num-v simulator__num-v--accent">
+                <Ticker value={yearly} format={fmtUsdShort} />
+              </div>
             </div>
-            <p className="text-[8px] text-[#2D4A5E] mt-auto">
-              Projected returns are estimates based on current APY. Past performance does not guarantee future results.
-            </p>
+            <div>
+              <div className="simulator__num-l">Per month</div>
+              <div className="simulator__num-v">
+                <Ticker value={monthly} format={fmtUsdShort} />
+              </div>
+            </div>
+            <div>
+              <div className="simulator__num-l">Blended risk</div>
+              <div className="simulator__num-v">
+                <Ticker value={blendedRisk} decimals={2} />{" "}
+                <span className="text-white/30 text-[12px]">/ 10</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </section>
+    </GlassCard>
   );
 }

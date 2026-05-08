@@ -1,103 +1,75 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Opportunity, StrategyType } from "@/lib/types";
 import { riskAdjustedYield } from "@/lib/risk";
 import FilterBar, { type Filters } from "./FilterBar";
-import StrategySection from "./StrategySection";
-
-interface RevenueItem {
-  protocol: string;
-  revenue7d: number;
-}
+import OpportunityCard from "./OpportunityCard";
 
 interface Props {
   opportunities: Opportunity[];
-  revenueData: RevenueItem[] | null;
 }
 
-const STRATEGY_ORDER: StrategyType[] = [
-  "Lending",
-  "Liquid Staking",
-  "RWA",
-  "Structured",
-  "LP",
-  "Staking",
-];
+export default function OpportunityGrid({ opportunities }: Props) {
+  const [filters, setFilters] = useState<Filters>({ strategy: null, sort: "raj" });
 
-export default function OpportunityGrid({ opportunities, revenueData }: Props) {
-  const [filters, setFilters] = useState<Filters>({
-    chain: "All",
-    strategy: "All",
-    maxRisk: 10,
-    sort: "riskAdjusted",
-    search: "",
-  });
-
-  const revenueMap = useMemo<Map<string, number>>(() => {
-    const map = new Map<string, number>();
-    for (const r of revenueData ?? []) {
-      map.set(r.protocol.toLowerCase(), r.revenue7d);
+  const counts = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const o of opportunities) {
+      map[o.strategyType] = (map[o.strategyType] ?? 0) + 1;
     }
     return map;
-  }, [revenueData]);
+  }, [opportunities]);
 
   const filtered = useMemo(() => {
     let list = [...opportunities];
-    if (filters.chain !== "All") list = list.filter((o) => o.chain === filters.chain);
-    if (filters.strategy !== "All") list = list.filter((o) => o.strategyType === filters.strategy);
-    list = list.filter((o) => o.riskScore <= filters.maxRisk);
-    if (filters.search) {
-      const q = filters.search.toLowerCase();
-      list = list.filter(
-        (o) => o.protocol.toLowerCase().includes(q) || o.yieldSource.toLowerCase().includes(q)
-      );
-    }
-    // Secondary sort for display within groups
-    list.sort((a, b) =>
-      riskAdjustedYield(b.totalAPY, b.riskScore) - riskAdjustedYield(a.totalAPY, a.riskScore)
-    );
+    if (filters.strategy) list = list.filter((o) => o.strategyType === filters.strategy);
+    list.sort((a, b) => {
+      if (filters.sort === "apy") return b.totalAPY - a.totalAPY;
+      if (filters.sort === "tvl") return b.tvl - a.tvl;
+      if (filters.sort === "risk") return a.riskScore - b.riskScore;
+      return riskAdjustedYield(b.totalAPY, b.riskScore) - riskAdjustedYield(a.totalAPY, a.riskScore);
+    });
     return list;
   }, [filters, opportunities]);
 
-  // Group by strategy in defined order
-  const groups = useMemo(() => {
-    const map = new Map<StrategyType, Opportunity[]>();
-    for (const opp of filtered) {
-      const existing = map.get(opp.strategyType) ?? [];
-      map.set(opp.strategyType, [...existing, opp]);
-    }
-    return STRATEGY_ORDER.filter((s) => map.has(s)).map((s) => ({
-      strategy: s,
-      items: map.get(s)!,
-    }));
-  }, [filtered]);
-
   return (
     <div>
-      <div className="border border-[#1E2A35] rounded-xl overflow-hidden mb-8 bg-[#0B0F14]">
-        <FilterBar
-          filters={filters}
-          onChange={setFilters}
-          count={filtered.length}
-          total={opportunities.length}
-        />
+      <div className="section-head section-head--inline">
+        <div>
+          <h2 className="section-head__title section-head__title--lg">Opportunities</h2>
+          <p className="section-head__sub">
+            {filtered.length} live pools · ranked by{" "}
+            {filters.sort === "raj"
+              ? "risk-adjusted yield"
+              : filters.sort === "apy"
+              ? "APY"
+              : filters.sort === "tvl"
+              ? "TVL"
+              : "risk"}
+          </p>
+        </div>
       </div>
-
-      {groups.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-[#3D5166]">
+      <FilterBar
+        filters={filters}
+        onChange={setFilters}
+        counts={counts}
+        total={opportunities.length}
+      />
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-3 text-[var(--ink-3)]">
           <span className="text-4xl opacity-20">⊘</span>
           <span className="text-[13px]">No opportunities match current filters.</span>
         </div>
       ) : (
-        groups.map(({ strategy, items }) => (
-          <StrategySection
-            key={strategy}
-            title={strategy}
-            opportunities={items}
-            revenueMap={revenueMap}
-          />
-        ))
+        <div className="opp-grid">
+          {filtered.map((o) => (
+            <OpportunityCard key={o.id} opp={o} />
+          ))}
+        </div>
       )}
     </div>
   );
 }
+
+// Keep StrategyType import resolution
+export type { StrategyType };

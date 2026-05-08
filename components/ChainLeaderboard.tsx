@@ -1,71 +1,63 @@
 "use client";
 import type { Opportunity, Chain } from "@/lib/types";
+import { GlassCard, CHAIN_META, fmtUsdShort } from "./atoms";
 
-interface ChainStats {
-  chain: Chain;
-  avgAPY: number;
-  bestAPY: number;
-  bestProtocol: string;
+interface ChainRow {
+  name: Chain;
+  tvl: number;
   count: number;
+  avgApy: number;
 }
 
 export default function ChainLeaderboard({ opportunities }: { opportunities: Opportunity[] }) {
-  if (!opportunities.length) return null;
-
-  const map = new Map<Chain, Opportunity[]>();
-  for (const opp of opportunities) {
-    const list = map.get(opp.chain) ?? [];
-    list.push(opp);
-    map.set(opp.chain, list);
+  const byChain = new Map<Chain, ChainRow>();
+  for (const o of opportunities) {
+    const row = byChain.get(o.chain) ?? { name: o.chain, tvl: 0, count: 0, avgApy: 0 };
+    row.tvl += o.tvl;
+    row.count += 1;
+    row.avgApy += o.totalAPY;
+    byChain.set(o.chain, row);
   }
-
-  const stats: ChainStats[] = [];
-  map.forEach((opps, chain) => {
-    const avgAPY = opps.reduce((s, o) => s + o.totalAPY, 0) / opps.length;
-    const best = opps.reduce((a, b) => (b.totalAPY > a.totalAPY ? b : a));
-    stats.push({ chain, avgAPY, bestAPY: best.totalAPY, bestProtocol: best.protocol, count: opps.length });
-  });
-
-  stats.sort((a, b) => b.avgAPY - a.avgAPY);
+  const rows = Array.from(byChain.values())
+    .map((r) => ({ ...r, avgApy: r.avgApy / Math.max(1, r.count) }))
+    .sort((a, b) => b.tvl - a.tvl);
+  if (rows.length === 0) return null;
+  const max = Math.max(...rows.map((r) => r.tvl));
 
   return (
-    <div className="border-b border-[#1E2A35] bg-[#0D1318]">
-      <div className="max-w-[1600px] mx-auto px-6 py-3">
-        <p className="text-[9px] tracking-widest text-[#3D5166] mb-2">
-          CHAIN LEADERBOARD · AVG YIELD THIS SESSION
-        </p>
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {stats.map((s, i) => {
-            const isTop = i === 0;
-            return (
-              <div
-                key={s.chain}
-                className={`border rounded-lg px-3 py-2 flex flex-col gap-0.5 shrink-0 transition-colors ${
-                  isTop
-                    ? "border-[#FFD700]/40 bg-[#FFD700]/5"
-                    : "border-[#1E2A35] bg-[#111820]/50"
-                }`}
-              >
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[9px] text-[#3D5166]">#{i + 1}</span>
-                  <span className="text-[11px] text-[#C8D8E8] font-medium">{s.chain}</span>
-                  {isTop && (
-                    <span className="text-[7px] bg-[#FFD700]/10 border border-[#FFD700]/30 text-[#FFD700] px-1 py-0.5 rounded font-medium tracking-wide">
-                      BEST
-                    </span>
-                  )}
-                </div>
-                <span className="text-emerald-400 font-bold text-[14px] tabular-nums leading-none">
-                  {s.avgAPY.toFixed(2)}%
-                </span>
-                <span className="text-[9px] text-[#3D5166] truncate max-w-[120px]">
-                  {s.bestProtocol} · {s.bestAPY.toFixed(1)}% peak
-                </span>
-              </div>
-            );
-          })}
+    <GlassCard className="leaderboard">
+      <div className="section-head">
+        <div>
+          <h3 className="section-head__title">Chains</h3>
+          <p className="section-head__sub">TVL distribution across networks</p>
         </div>
       </div>
-    </div>
+      <div className="leaderboard__rows">
+        {rows.map((r, i) => {
+          const c = CHAIN_META[r.name] ?? { color: "#64748B", short: "" };
+          return (
+            <div className="leaderboard__row" key={r.name}>
+              <span className="leaderboard__rank">{String(i + 1).padStart(2, "0")}</span>
+              <span
+                className="leaderboard__dot"
+                style={{ background: c.color, boxShadow: `0 0 10px ${c.color}80` }}
+              />
+              <span className="leaderboard__name">{r.name}</span>
+              <span className="leaderboard__tvl">{fmtUsdShort(r.tvl)}</span>
+              <span className="leaderboard__apy">{r.avgApy.toFixed(2)}%</span>
+              <div className="leaderboard__bar">
+                <div
+                  className="leaderboard__bar-fill"
+                  style={{
+                    width: `${(r.tvl / max) * 100}%`,
+                    background: `linear-gradient(90deg, ${c.color}, color-mix(in oklab, ${c.color} 50%, var(--accent)))`,
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </GlassCard>
   );
 }

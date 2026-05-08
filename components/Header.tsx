@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 import WalletButton from "./WalletButton";
 
 export type ViewMode = "institutional" | "retail";
@@ -10,49 +9,75 @@ interface Props {
 }
 
 export default function Header({ onViewChange, view = "institutional" }: Props) {
+  const navs = [
+    { id: "scanner", label: "Scanner", active: true },
+    { id: "portfolio", label: "Portfolio" },
+    { id: "vaults", label: "Vaults" },
+    { id: "docs", label: "Docs" },
+  ];
+
   return (
-    <header className="border-b border-[#1E2A35] bg-[#0B0F14]/98 backdrop-blur sticky top-0 z-50">
-      <div className="max-w-[1600px] mx-auto px-6 h-16 flex items-center justify-between gap-6">
-
-        {/* Brand */}
-        <div className="flex items-center gap-4 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00D4FF] to-[#0077AA] flex items-center justify-center text-[11px] font-bold text-black tracking-wide">
-            FI
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold tracking-widest text-[#C8D8E8] leading-none">
-              INVESTFI<span className="text-[#2D4A5E]">.ETH</span>
+    <header className="if-header">
+      <div className="if-header__inner">
+        <div className="flex items-center gap-7">
+          <a className="if-logo" href="/">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <path
+                d="M3 18 L11 4 L19 18"
+                stroke="var(--accent)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M7 13 L11 8 L15 13"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                opacity=".55"
+              />
+            </svg>
+            <span>
+              Invest<span style={{ color: "var(--accent)" }}>Fi</span>
             </span>
-            <span className="text-[9px] text-[#3D5166] tracking-widest mt-0.5">DeFi Intelligence Terminal</span>
+          </a>
+
+          <nav className="if-nav">
+            {navs.map((n) => (
+              <button key={n.id} className="if-nav__item" data-active={n.active || undefined}>
+                {n.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="if-search">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+            <input placeholder="Search protocols, chains, assets…" />
+            <kbd>⌘K</kbd>
           </div>
-        </div>
 
-        {/* Center live indicator */}
-        <div className="hidden lg:flex items-center gap-1.5 text-[10px] text-[#3D5166]">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span>LIVE · DeFiLlama</span>
-          <span className="mx-3 text-[#1E2A35]">|</span>
-          <span>Revalidates every hour</span>
-        </div>
-
-        {/* Right: view toggle + wallet */}
-        <div className="flex items-center gap-3 shrink-0">
-        <div className="flex items-center gap-1 border border-[#1E2A35] rounded-lg p-1 text-[11px] bg-[#0D1318]">
-          {(["institutional", "retail"] as ViewMode[]).map((v) => (
+          <div className="if-toggle">
             <button
-              key={v}
-              onClick={() => onViewChange?.(v)}
-              className={`px-4 py-1.5 rounded-md transition-all font-medium tracking-wide ${
-                view === v
-                  ? "bg-[#00D4FF]/15 text-[#00D4FF] shadow-sm"
-                  : "text-[#3D5166] hover:text-[#6B8499]"
-              }`}
+              data-active={view === "institutional" || undefined}
+              onClick={() => onViewChange?.("institutional")}
             >
-              {v === "institutional" ? "INSTITUTIONAL" : "RETAIL"}
+              Pro
             </button>
-          ))}
-        </div>
-        <WalletButton />
+            <button
+              data-active={view === "retail" || undefined}
+              onClick={() => onViewChange?.("retail")}
+            >
+              Simple
+            </button>
+          </div>
+
+          <WalletButton />
         </div>
       </div>
     </header>
