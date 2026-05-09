@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { useAccount, useSendTransaction, useReadContract, useWriteContract } from "wagmi";
 import type { Opportunity } from "@/lib/types";
+import { oneInchUrl } from "@/lib/oneinch";
 
 // Protocols where 1inch can route to the receipt token via DEX
 const SWAPPABLE_TOKENS: Record<string, { symbol: string; address: string }> = {
@@ -36,7 +37,6 @@ const ERC20_ABI = [
     outputs: [{ type: "bool" }] },
 ] as const;
 
-const API_KEY      = process.env.NEXT_PUBLIC_1INCH_API_KEY ?? "";
 const FEE_RECEIVER = process.env.NEXT_PUBLIC_INVESTFI_FEE_RECEIVER ?? "";
 const FEE_BPS      = parseInt(process.env.NEXT_PUBLIC_1INCH_FEE_BPS ?? "50", 10);
 
@@ -90,17 +90,15 @@ export default function AllocateModal({ opp, onClose }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({
+      const { url, headers } = oneInchUrl(1, "quote", {
         src: USDC_ADDRESS,
         dst: swappable.address,
         amount: amountWei,
         includeProtocols: "true",
-        fee: (FEE_BPS / 10000).toString(),
+        fee: FEE_BPS / 10000,
         referrerAddress: FEE_RECEIVER,
       });
-      const res = await fetch(`https://api.1inch.dev/swap/v6.0/1/quote?${params}`, {
-        headers: { Authorization: `Bearer ${API_KEY}`, Accept: "application/json" },
-      });
+      const res = await fetch(url, { headers });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.description ?? err.error ?? `Quote failed (${res.status})`);
@@ -148,18 +146,16 @@ export default function AllocateModal({ opp, onClose }: Props) {
     setStep("swapping");
     setError(null);
     try {
-      const params = new URLSearchParams({
+      const { url, headers } = oneInchUrl(1, "swap", {
         src: USDC_ADDRESS,
         dst: swappable.address,
         amount: amountWei,
         from: address,
         slippage: "1",
-        fee: (FEE_BPS / 10000).toString(),
+        fee: FEE_BPS / 10000,
         referrerAddress: FEE_RECEIVER,
       });
-      const res = await fetch(`https://api.1inch.dev/swap/v6.0/1/swap?${params}`, {
-        headers: { Authorization: `Bearer ${API_KEY}`, Accept: "application/json" },
-      });
+      const res = await fetch(url, { headers });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.description ?? err.error ?? `Swap failed (${res.status})`);

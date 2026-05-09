@@ -1,0 +1,6 @@
+name = "investfi-1inch-proxy"
+main = "src/index.js"
+compatibility_date = "2025-05-08"
+
+# Free tier: 100k requests/day, plenty for InvestFi's traffic.
+# Set the secret with:  wrangler secret put ONEINCH_API_KEY

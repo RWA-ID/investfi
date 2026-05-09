@@ -5,6 +5,7 @@ import { riskAdjustedYield } from "@/lib/risk";
 import AllocateModal from "./AllocateModal";
 import { ProtoMark, ChainBadge, Ticker } from "./atoms";
 import { fmtUsdShort } from "@/lib/format";
+import { oneInchUrl, isOneInchConfigured } from "@/lib/oneinch";
 
 // Mirror of SWAPPABLE_TOKENS in AllocateModal — 1inch can route to these.
 const SWAPPABLE: Record<string, { symbol: string; address: string; decimals: number }> = {
@@ -16,7 +17,6 @@ const SWAPPABLE: Record<string, { symbol: string; address: string; decimals: num
 };
 
 const USDC = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
-const API_KEY = process.env.NEXT_PUBLIC_1INCH_API_KEY ?? "";
 const FEE_RECEIVER = process.env.NEXT_PUBLIC_INVESTFI_FEE_RECEIVER ?? "";
 const FEE_BPS = parseInt(process.env.NEXT_PUBLIC_1INCH_FEE_BPS ?? "50", 10);
 const SAMPLE_USDC = 1000;
@@ -50,23 +50,26 @@ export default function TradeOfTheDay({ opportunities }: { opportunities: Opport
   useEffect(() => {
     if (!pick) return;
     const tok = SWAPPABLE[pick.id];
-    if (!tok || !API_KEY) {
-      setQuote({ toAmount: null, protocols: [], error: API_KEY ? "no token" : null, loading: false });
+    if (!tok || !isOneInchConfigured()) {
+      setQuote({
+        toAmount: null,
+        protocols: [],
+        error: isOneInchConfigured() ? "no token" : null,
+        loading: false,
+      });
       return;
     }
     let cancelled = false;
     setQuote((q) => ({ ...q, loading: true, error: null }));
-    const params = new URLSearchParams({
+    const { url, headers } = oneInchUrl(1, "quote", {
       src: USDC,
       dst: tok.address,
-      amount: String(SAMPLE_USDC * 1e6),
+      amount: SAMPLE_USDC * 1e6,
       includeProtocols: "true",
-      fee: (FEE_BPS / 10000).toString(),
+      fee: FEE_BPS / 10000,
       referrerAddress: FEE_RECEIVER,
     });
-    fetch(`https://api.1inch.dev/swap/v6.0/1/quote?${params}`, {
-      headers: { Authorization: `Bearer ${API_KEY}`, Accept: "application/json" },
-    })
+    fetch(url, { headers })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((data) => {
         if (cancelled) return;
