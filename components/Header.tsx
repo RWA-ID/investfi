@@ -10,10 +10,10 @@ interface Props {
 
 export default function Header({ onViewChange, view = "institutional" }: Props) {
   const navs = [
-    { id: "scanner", label: "Scanner", active: true },
-    { id: "portfolio", label: "Portfolio" },
-    { id: "vaults", label: "Vaults" },
-    { id: "docs", label: "Docs" },
+    { id: "scanner", label: "Scanner", href: "/", active: true },
+    { id: "portfolio", label: "Portfolio", href: "/" },
+    { id: "vaults", label: "Vaults", href: "/" },
+    { id: "methodology", label: "Methodology", href: "/methodology" },
   ];
 
   return (
@@ -45,9 +45,14 @@ export default function Header({ onViewChange, view = "institutional" }: Props) 
 
           <nav className="if-nav">
             {navs.map((n) => (
-              <button key={n.id} className="if-nav__item" data-active={n.active || undefined}>
+              <a
+                key={n.id}
+                href={n.href}
+                className="if-nav__item"
+                data-active={n.active || undefined}
+              >
                 {n.label}
-              </button>
+              </a>
             ))}
           </nav>
         </div>

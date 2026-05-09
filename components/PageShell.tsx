@@ -7,6 +7,7 @@ import OpportunityGrid from "./OpportunityGrid";
 import ChainLeaderboard from "./ChainLeaderboard";
 import PortfolioSimulator from "./PortfolioSimulator";
 import BackedBy from "./BackedBy";
+import TradeOfTheDay from "./TradeOfTheDay";
 import type { Opportunity } from "@/lib/types";
 
 interface MarketPrices {
@@ -41,7 +42,9 @@ export default function PageShell({ opportunities, marketPrices }: Props) {
         <StatsBar opportunities={displayOpps} marketPrices={marketPrices} />
 
         <div className="container-if">
-          <div className="dashboard__row">
+          <TradeOfTheDay opportunities={displayOpps} />
+
+          <div className="dashboard__row" id="opportunities">
             <div>
               <OpportunityGrid opportunities={displayOpps} />
             </div>

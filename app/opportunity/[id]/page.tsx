@@ -7,7 +7,8 @@ import Header from "@/components/Header";
 import APYChart from "@/components/APYChart";
 import OpportunityCard from "@/components/OpportunityCard";
 import AllocatePanel from "@/components/AllocatePanel";
-import { ProtoMark, ChainBadge, RiskPill, RiskBar, fmtUsdShort, GlassCard, Ticker } from "@/components/atoms";
+import { ProtoMark, ChainBadge, RiskPill, RiskBar, GlassCard, Ticker } from "@/components/atoms";
+import { fmtUsdShort } from "@/lib/format";
 import type { RiskBreakdown } from "@/lib/types";
 
 export const revalidate = 3600;
