@@ -7,13 +7,13 @@ import { ProtoMark, ChainBadge, Ticker } from "./atoms";
 import { fmtUsdShort } from "@/lib/format";
 import { oneInchUrl, isOneInchConfigured } from "@/lib/oneinch";
 
-// Mirror of SWAPPABLE_TOKENS in AllocateModal — 1inch can route to these.
+// 1inch v6 reliably routes USDC → these. PT/wrapper tokens (Pendle PT,
+// steakUSDC, etc.) require their protocol's router and are excluded here so
+// the live quote always works.
 const SWAPPABLE: Record<string, { symbol: string; address: string; decimals: number }> = {
-  "lido-steth":       { symbol: "stETH",     address: "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84", decimals: 18 },
-  "rocketpool-reth":  { symbol: "rETH",      address: "0xae78736Cd615f374D3085123A210448E74Fc6393", decimals: 18 },
-  "morpho-steakusdc": { symbol: "steakUSDC", address: "0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB", decimals: 18 },
-  "pendle-usdg":      { symbol: "PT-USDG",   address: "0x6b4B077cf9e31a8703f32Aa50C27B95e07c8aa3e", decimals: 18 },
-  "ondo-usdyc":       { symbol: "USDY",      address: "0x96F6eF951840721AdBF46Ac996b59E0235CB985C", decimals: 18 },
+  "lido-steth":      { symbol: "stETH", address: "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84", decimals: 18 },
+  "rocketpool-reth": { symbol: "rETH",  address: "0xae78736Cd615f374D3085123A210448E74Fc6393", decimals: 18 },
+  "ondo-usdyc":      { symbol: "USDY",  address: "0x96F6eF951840721AdBF46Ac996b59E0235CB985C", decimals: 18 },
 };
 
 const USDC = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
@@ -29,15 +29,17 @@ interface QuoteState {
 }
 
 export default function TradeOfTheDay({ opportunities }: { opportunities: Opportunity[] }) {
-  const pick = useMemo(() => {
-    const eligible = opportunities.filter((o) => SWAPPABLE[o.id]);
-    if (!eligible.length) return null;
-    return eligible.reduce((best, o) =>
-      riskAdjustedYield(o.totalAPY, o.riskScore) > riskAdjustedYield(best.totalAPY, best.riskScore)
-        ? o
-        : best
-    );
+  const ranked = useMemo(() => {
+    return opportunities
+      .filter((o) => SWAPPABLE[o.id])
+      .sort(
+        (a, b) =>
+          riskAdjustedYield(b.totalAPY, b.riskScore) - riskAdjustedYield(a.totalAPY, a.riskScore)
+      );
   }, [opportunities]);
+
+  const [pickIdx, setPickIdx] = useState(0);
+  const pick = ranked[pickIdx] ?? null;
 
   const [quote, setQuote] = useState<QuoteState>({
     toAmount: null,
@@ -82,6 +84,12 @@ export default function TradeOfTheDay({ opportunities }: { opportunities: Opport
       })
       .catch((e) => {
         if (cancelled) return;
+        // 1inch can refuse routes for some receipt tokens (PT, wrappers, etc.).
+        // Fall back to the next opportunity by RAY rank.
+        if (pickIdx < ranked.length - 1) {
+          setPickIdx((i) => i + 1);
+          return;
+        }
         setQuote({ toAmount: null, protocols: [], error: e.message, loading: false });
       });
     return () => {
